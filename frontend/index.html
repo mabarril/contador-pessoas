@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard de contagem de pessoas em tempo real via IA e câmeras de vídeo." />
+  <title>Contador de Pessoas — Dashboard</title>
+  <link rel="stylesheet" href="/assets/style.css" />
+  <!-- Chart.js para gráfico horário -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ===== HEADER ===== -->
+  <header>
+    <div class="header-logo">
+      <div class="logo-icon">👥</div>
+      <div>
+        <h1>Contador de Pessoas</h1>
+        <span>Sistema de contagem via IA</span>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot" id="ws-dot"></div>
+      <span class="status-label" id="ws-label">Conectando…</span>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside>
+    <div class="sidebar-section-title">Câmeras</div>
+    <div id="camera-nav">
+      <!-- preenchido por JS -->
+      <div style="color:var(--text-muted);font-size:12px;padding:10px;">Carregando…</div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main>
+
+    <!-- Stat cards globais -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon inside">👤</div>
+        <div class="stat-label">Dentro agora</div>
+        <div class="stat-value accent" id="stat-inside">—</div>
+        <div class="stat-trend">estimativa atual</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon in">↗</div>
+        <div class="stat-label">Entradas hoje</div>
+        <div class="stat-value green" id="stat-in">—</div>
+        <div class="stat-trend">acumulado do dia</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon out">↙</div>
+        <div class="stat-label">Saídas hoje</div>
+        <div class="stat-value red" id="stat-out">—</div>
+        <div class="stat-trend">acumulado do dia</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon total">📊</div>
+        <div class="stat-label">Total de câmeras</div>
+        <div class="stat-value yellow" id="stat-cameras">—</div>
+        <div class="stat-trend">Configuradas</div>
+      </div>
+    </div>
+
+    <!-- Linha: Vídeo + Feed de eventos -->
+    <div class="content-grid">
+
+      <!-- Vídeo -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="icon">🎥</span>
+            <span id="stream-cam-name">Câmera</span>
+          </div>
+          <span class="badge blue" id="stream-status">Aguardando</span>
+        </div>
+        <div class="section-body">
+          <div class="video-wrapper">
+            <img id="video-stream" src="" alt="Stream da câmera" />
+            <div class="video-overlay" id="video-overlay">
+              <div class="spinner"></div>
+              <span>Aguardando stream…</span>
+            </div>
+            <div class="video-badge">
+              <div class="live-dot"></div>
+              AO VIVO
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed de eventos -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="icon">⚡</span>
+            Eventos recentes
+          </div>
+          <span class="badge blue" id="events-count">0</span>
+        </div>
+        <div class="section-body">
+          <div class="events-feed" id="events-feed">
+            <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px 0;">
+              Aguardando eventos…
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Gráfico horário -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="icon">📈</span>
+          Movimento por hora — hoje
+        </div>
+        <span class="badge blue" id="chart-cam-label">—</span>
+      </div>
+      <div class="section-body">
+        <div class="chart-container">
+          <canvas id="hourly-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>

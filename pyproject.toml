@@ -1,0 +1,75 @@
+[tool.poetry]
+name = "contador-pessoas"
+version = "0.1.0"
+description = "Sistema standalone de contagem automatizada de pessoas via câmera e IA"
+authors = ["Contador Pessoas"]
+readme = "README.md"
+packages = [{ include = "app" }]
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = {version = "^2.2.0", source = "pytorch-cpu"}
+torchvision = {version = "^0.17.0", source = "pytorch-cpu"}
+# Web framework
+fastapi = "^0.115.0"
+uvicorn = { extras = ["standard"], version = "^0.32.0" }
+websockets = "^13.1"
+
+# Computer vision & AI
+opencv-python = "^4.10.0"
+ultralytics = "^8.3.0"        # YOLOv8n + ByteTrack integrado
+onnxruntime = "^1.20.0"       # Runtime otimizado para CPU
+
+# Data & persistence
+sqlalchemy = "^2.0.0"
+aiosqlite = "^0.20.0"         # SQLAlchemy async com SQLite
+
+# Configuration & validation
+pydantic = "^2.9.0"
+pydantic-settings = "^2.6.0"
+pyyaml = "^6.0.2"
+
+# Scheduling
+apscheduler = "^3.10.4"
+
+# Logging
+loguru = "^0.7.2"
+
+# Utilities
+numpy = "^1.26.0"
+python-multipart = "^0.0.12"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-asyncio = "^0.24.0"
+pytest-cov = "^6.0.0"
+httpx = "^0.28.0"             # Test client para FastAPI
+ruff = "^0.8.0"
+black = "^24.10.0"
+
+[tool.poetry.scripts]
+contador = "app.main:run"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

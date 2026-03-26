@@ -1,0 +1,53 @@
+# Configuração principal do Contador de Pessoas
+# Edite este arquivo para adaptar ao seu ambiente.
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+model:
+  # Formato .pt (PyTorch) para tracking integrado; rode scripts/download_model.py para baixar
+  path: "models/yolov8n.pt"
+  confidence_threshold: 0.5
+  # Resolução de entrada para inferência (menor = mais rápido, menos preciso)
+  input_resolution: [640, 480]
+  # Processar 1 a cada N frames (2 = pula 2, processa 1)
+  # Aumente se a CPU estiver sobrecarregada (ex.: 4 em hardware muito limitado)
+  skip_frames: 2
+
+cameras:
+  - id: "entrada-principal"
+    name: "Entrada Principal"
+    # Tipo da fonte: usb | rtsp | file
+    type: "usb"
+    # USB: índice inteiro (0 = primeira câmera)
+    # RTSP: string com URL (ex.: "rtsp://192.168.1.100:554/stream")
+    # File: caminho para arquivo de vídeo (ex.: "videos/teste.mp4") — ideal para testes
+    # source: "data/vtest.avi"
+    source: 0
+    counting_line:
+      # "vertical" = linha paralela ao eixo Y (recomendado para vista lateral)
+      # "horizontal" = linha paralela ao eixo X (para câmera de topo)
+      orientation: "vertical"
+      # Posição da linha: fração do frame (0.0 = borda esquerda, 1.0 = borda direita)
+      position: 0.5
+      # Direção que conta como ENTRADA: "right" (esquerda→direita) ou "left" (direita→esquerda)
+      direction_in: "left"
+
+database:
+  path: "data/contador.db"
+
+reports:
+  # Períodos do dia para agrupamento nos relatórios
+  periods:
+    - name: "Manhã"
+      start: "06:00"
+      end: "12:00"
+    - name: "Tarde"
+      start: "12:00"
+      end: "18:00"
+
+logging:
+  level: "INFO"
+  # Logs ficam em logs/contador.log com rotação automática
+  retention_days: 30

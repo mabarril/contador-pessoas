@@ -1,0 +1,34 @@
+# Arquivos de dados gerados em runtime
+data/
+logs/
+models/*.onnx
+models/*.pt
+
+# Ambiente virtual Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Cobertura de testes
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Variáveis de ambiente local (se usado no futuro)
+.env
+.env.local
