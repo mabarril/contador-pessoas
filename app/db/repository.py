@@ -20,11 +20,13 @@ class CountEventRepository:
         direction: str,
         track_id: int,
         timestamp: datetime | None = None,
+        dwell_duration: float | None = None,
     ) -> CountEvent:
         event = CountEvent(
             camera_id=camera_id,
             direction=direction,
             track_id=track_id,
+            dwell_duration_seconds=dwell_duration,
             timestamp=timestamp or datetime.now(tz=ZoneInfo("America/Sao_Paulo")),
         )
         self._session.add(event)

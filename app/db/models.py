@@ -20,6 +20,7 @@ class CountEvent(Base):
     camera_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     direction: Mapped[str] = mapped_column(String(8), nullable=False)  # "in" | "out"
     track_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    dwell_duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

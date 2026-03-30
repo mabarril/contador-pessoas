@@ -28,7 +28,24 @@ def build_scheduler(config: AppConfig, manager: CameraManager) -> AsyncIOSchedul
         replace_existing=True,
     )
 
+    # Reseta contadores em memória exatamente na virada do dia (00:00)
+    scheduler.add_job(
+        _reset_daily_counters,
+        trigger="cron",
+        hour=0,
+        minute=0,
+        args=[manager],
+        id="daily_reset",
+        replace_existing=True,
+    )
+
     return scheduler
+
+
+async def _reset_daily_counters(manager: CameraManager) -> None:
+    """Zera contadores em memória na virada do dia."""
+    logger.info("Executando resete diário dos contadores...")
+    manager.reset_all_counts()
 
 
 async def _generate_daily_summaries(config: AppConfig, manager: CameraManager) -> None:
@@ -61,6 +78,16 @@ async def _generate_daily_summaries(config: AppConfig, manager: CameraManager) -
                     count_in = sum(1 for e in events if e.direction == "in")
                     count_out = sum(1 for e in events if e.direction == "out")
 
+                    # Metodologia FIFO: média das durações registradas nos eventos "out"
+                    out_durations = [
+                        e.dwell_duration_seconds 
+                        for e in events 
+                        if e.direction == "out" and e.dwell_duration_seconds is not None
+                    ]
+                    avg_dwell_min = 0.0
+                    if out_durations:
+                        avg_dwell_min = (sum(out_durations) / len(out_durations)) / 60.0
+
                     # Estimativa de pico de ocupação
                     occupancy = 0
                     peak = 0
@@ -75,7 +102,7 @@ async def _generate_daily_summaries(config: AppConfig, manager: CameraManager) -
                         count_in=count_in,
                         count_out=count_out,
                         peak_occupancy=peak,
-                        avg_dwell_minutes=0.0,
+                        avg_dwell_minutes=avg_dwell_min,
                     )
 
                     summary_repo = DailySummaryRepository(session)

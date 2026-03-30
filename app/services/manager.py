@@ -59,6 +59,12 @@ class CameraManager:
     def get_session(self, camera_id: str) -> CameraSession | None:
         return self._sessions.get(camera_id)
 
+    def reset_all_counts(self) -> None:
+        """Reseta contadores de todas as câmeras ativas."""
+        for session in self._sessions.values():
+            session.counter.reset()
+        logger.info("Todos os contadores foram resetados via Manager")
+
     def all_states(self) -> list[CountState]:
         return [s.counter.state for s in self._sessions.values()]
 
@@ -154,14 +160,18 @@ class CameraManager:
             await session.source.close()
 
     async def _on_crossing(
-        self, camera_id: str, direction: str, track_id: int
+        self,
+        camera_id: str,
+        direction: str,
+        track_id: int,
+        dwell_duration: float | None = None,
     ) -> None:
         """Persiste evento de cruzamento no banco de dados."""
         try:
             factory = get_session_factory()
             async with factory() as db_session:
                 repo = CountEventRepository(db_session)
-                await repo.add(camera_id, direction, track_id)
+                await repo.add(camera_id, direction, track_id, dwell_duration=dwell_duration)
         except Exception as exc:
             logger.error("Erro ao persistir cruzamento: {}", exc)
 

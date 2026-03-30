@@ -27,7 +27,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     detector = Detector(
         model_path=cfg.model.path,
         confidence=cfg.model.confidence_threshold,
-        input_resolution=tuple(cfg.model.input_resolution),  # type: ignore[arg-type]
+        imgsz=cfg.model.input_resolution[0],
         skip_frames=cfg.model.skip_frames,
     )
 

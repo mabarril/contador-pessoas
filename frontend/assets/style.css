@@ -23,6 +23,8 @@
   --red:            #fc8181;
   --red-glow:       rgba(252,129,129,0.18);
   --yellow:         #f6e05e;
+  --purple:         #a78bfa;
+  --purple-glow:    rgba(167,139,250,0.18);
 
   --text-primary:   #e8eaf0;
   --text-secondary: #8892a4;
@@ -234,6 +236,7 @@ main {
 .stat-icon.inside { background: var(--accent-glow); }
 .stat-icon.in     { background: var(--green-glow); }
 .stat-icon.out    { background: var(--red-glow); }
+.stat-icon.dwell  { background: var(--purple-glow); }
 .stat-icon.total  { background: rgba(246,224,94,0.12); }
 
 .stat-label {
@@ -254,6 +257,7 @@ main {
 .stat-value.accent { color: var(--accent); }
 .stat-value.green  { color: var(--green); }
 .stat-value.red    { color: var(--red); }
+.stat-value.purple { color: var(--purple); }
 .stat-value.yellow { color: var(--yellow); }
 
 .stat-trend {

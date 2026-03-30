@@ -53,27 +53,28 @@ async def test_vertical_crossing_in(cam_config_vertical_right: CameraConfig):
     """Testa cruzamento de linha vertical para a DIREITA (entrada)."""
     callback_calls = []
 
-    async def mock_callback(cid: str, direction: str, tid: int):
-        callback_calls.append((cid, direction, tid))
+    async def mock_callback(cid: str, direction: str, tid: int, dwell_duration: float | None):
+        callback_calls.append((cid, direction, tid, dwell_duration))
 
     counter = LineCounter(cam_config_vertical_right, on_crossing=mock_callback)
 
     # Frame de 640x480. A linha está no x=320 (0.5 * 640)
+    # Dead-zone padrão = 8px => deve cruzar de <312 para >328
     w, h = 640, 480
 
-    # Frame 1: pessoa #1 está à esquerda da linha (x=300)
-    await counter.update([build_person(1, 300, 240)], w, h)
+    # Frame 1: pessoa #1 está claramente à esquerda da dead-zone (x=290)
+    await counter.update([build_person(1, 290, 240)], w, h)
     assert counter.state.count_in == 0
     assert len(callback_calls) == 0
 
-    # Frame 2: pessoa #1 cruzou para a direita da linha (x=330)
-    await counter.update([build_person(1, 330, 240)], w, h)
-    
+    # Frame 2: pessoa #1 cruzou claramente para a direita da dead-zone (x=350)
+    await counter.update([build_person(1, 350, 240)], w, h)
+
     # Deve registrar 'in' (direction_in=right)
     assert counter.state.count_in == 1
     assert counter.state.inside == 1
     assert len(callback_calls) == 1
-    assert callback_calls[0] == ("cam-vert", "in", 1)
+    assert callback_calls[0] == ("cam-vert", "in", 1, None)
 
 
 @pytest.mark.asyncio
@@ -82,11 +83,11 @@ async def test_vertical_crossing_out(cam_config_vertical_right: CameraConfig):
     counter = LineCounter(cam_config_vertical_right)
     w, h = 640, 480
 
-    # Frame 1: pessoa na direita (x=340)
-    await counter.update([build_person(2, 340, 240)], w, h)
-    
-    # Frame 2: cruzou para esquerda (x=300)
-    await counter.update([build_person(2, 300, 240)], w, h)
+    # Frame 1: pessoa na direita, claramente além da dead-zone (x=360)
+    await counter.update([build_person(2, 360, 240)], w, h)
+
+    # Frame 2: cruzou para esquerda, claramente antes da dead-zone (x=280)
+    await counter.update([build_person(2, 280, 240)], w, h)
 
     assert counter.state.count_in == 0
     assert counter.state.count_out == 1
@@ -97,15 +98,16 @@ async def test_vertical_crossing_out(cam_config_vertical_right: CameraConfig):
 async def test_horizontal_crossing_in(cam_config_horizontal_down: CameraConfig):
     """Testa cruzamento de linha horizontal para BAIXO (entrada)."""
     counter = LineCounter(cam_config_horizontal_down)
-    
+
     # Frame de 640x480. Linha no y=240 (0.5 * 480)
+    # Dead-zone = 8px => deve cruzar de <232 para >248
     w, h = 640, 480
 
-    # Frame 1: pessoa em cima (y=200)
+    # Frame 1: pessoa claramente em cima da dead-zone (y=200)
     await counter.update([build_person(10, 320, 200)], w, h)
-    
-    # Frame 2: pessoa cruzou para baixo (y=260)
-    await counter.update([build_person(10, 320, 260)], w, h)
+
+    # Frame 2: pessoa cruzou claramente para baixo da dead-zone (y=270)
+    await counter.update([build_person(10, 320, 270)], w, h)
 
     # 'down' é input, então:
     assert counter.state.count_in == 1
@@ -135,3 +137,45 @@ async def test_stale_track_cleanup(cam_config_vertical_right: CameraConfig):
     # tid 1 deve ter sido apagado para não estourar memória
     assert 1 not in counter._last_positions
     assert 2 in counter._last_positions
+
+
+@pytest.mark.asyncio
+async def test_two_people_crossing_simultaneously(cam_config_vertical_right: CameraConfig):
+    """Duas pessoas cruzando a linha ao mesmo tempo devem ser contadas separadamente."""
+    counter = LineCounter(cam_config_vertical_right)
+    w, h = 640, 480
+    # Linha em x=320, dead-zone=8 => cruzar de <312 para >328
+
+    # Frame 1: pessoa 1 e 2 estão claramente à esquerda (x=280)
+    await counter.update([
+        build_person(1, 280, 200),
+        build_person(2, 280, 280),
+    ], w, h)
+    assert counter.state.count_in == 0
+
+    # Frame 2: ambas cruzaram claramente para a direita (x=360)
+    await counter.update([
+        build_person(1, 360, 200),
+        build_person(2, 360, 280),
+    ], w, h)
+
+    # AMBAS devem ser contadas
+    assert counter.state.count_in == 2
+    assert counter.state.inside == 2
+
+
+@pytest.mark.asyncio
+async def test_cooldown_prevents_double_count(cam_config_vertical_right: CameraConfig):
+    """O cooldown deve impedir que o mesmo track_id conte duas vezes rapidamente."""
+    counter = LineCounter(cam_config_vertical_right, cooldown_frames=5)
+    w, h = 640, 480
+
+    # Frame 1: esquerda
+    await counter.update([build_person(1, 280, 240)], w, h)
+    # Frame 2: cruzou para direita — conta 1
+    await counter.update([build_person(1, 360, 240)], w, h)
+    assert counter.state.count_in == 1
+
+    # Frame 3: volta para esquerda (simula oscilação/ID switch) — cooldown ativo, não conta
+    await counter.update([build_person(1, 280, 240)], w, h)
+    assert counter.state.count_out == 0  # cooldown ainda ativo

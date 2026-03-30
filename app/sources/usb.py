@@ -43,10 +43,28 @@ class UsbSource(VideoSource):
             raise RuntimeError("Fonte não aberta. Chame open() primeiro.")
 
         loop = asyncio.get_event_loop()
+        consecutive_failures = 0
+
         while self.is_open():
             ret, frame = await loop.run_in_executor(None, self._cap.read)
             if not ret or frame is None:
-                logger.warning("[{}] Frame inválido recebido", self.name)
-                await asyncio.sleep(0.05)
+                consecutive_failures += 1
+                logger.warning(
+                    "[{}] Frame USB inválido (falha #{}) — tentando reconectar...",
+                    self.name,
+                    consecutive_failures,
+                )
+                if consecutive_failures >= 5:
+                    await self.close()
+                    await asyncio.sleep(2.0)
+                    try:
+                        await self.open()
+                        consecutive_failures = 0
+                    except OSError:
+                        await asyncio.sleep(5.0)
+                else:
+                    await asyncio.sleep(0.1)
                 continue
+
+            consecutive_failures = 0
             yield frame

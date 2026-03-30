@@ -14,6 +14,10 @@ try:
 except ImportError:
     YOLO = None  # type: ignore[assignment,misc]
 
+# Caminho para o config customizado do ByteTrack (relativo à raiz do projeto)
+_PROJECT_ROOT = Path(__file__).parents[2]
+_BYTETRACK_CFG = _PROJECT_ROOT / "models" / "bytetrack_custom.yaml"
+
 
 @dataclass
 class TrackedPerson:
@@ -39,13 +43,13 @@ class Detector:
     def __init__(
         self,
         model_path: Path,
-        confidence: float = 0.5,
-        input_resolution: tuple[int, int] = (640, 480),
-        skip_frames: int = 2,
+        confidence: float = 0.35,
+        imgsz: int = 640,
+        skip_frames: int = 1,
     ) -> None:
         self._model_path = model_path
         self._confidence = confidence
-        self._input_w, self._input_h = input_resolution
+        self._imgsz = imgsz
         self._skip_frames = skip_frames
         self._model: "YOLO | None" = None
         self._frame_counter = 0
@@ -86,16 +90,20 @@ class Detector:
         if self._model is None:
             raise RuntimeError("Detector não carregado. Chame load() primeiro.")
 
-        # Redimensiona para resolução de inferência
-        resized = cv2.resize(frame, (self._input_w, self._input_h))
+        # Usa config customizado se disponível, senão cai no padrão do ultralytics
+        tracker_cfg = str(_BYTETRACK_CFG) if _BYTETRACK_CFG.exists() else "bytetrack.yaml"
 
+        # Deixamos o YOLO cuidar do redimensionamento (letterbox) internamente
+        # Isso evita distorção e retorna as bboxes já nas coordenadas originais.
         results = self._model.track(
-            resized,
+            frame,
             persist=True,
+            imgsz=self._imgsz,
             classes=[self.CLASS_PERSON],
             conf=self._confidence,
+            iou=0.35,        # IoU baixo = distingue melhor pessoas próximas
             verbose=False,
-            tracker="bytetrack.yaml",
+            tracker=tracker_cfg,
         )
 
         persons: list[TrackedPerson] = []
@@ -106,26 +114,16 @@ class Detector:
             ids = result.boxes.id.cpu().numpy().astype(int)
             confs = result.boxes.conf.cpu().numpy()
 
-            # Escala de volta para dimensões originais
-            h_orig, w_orig = frame.shape[:2]
-            sx = w_orig / self._input_w
-            sy = h_orig / self._input_h
-
             for bbox, tid, conf in zip(boxes, ids, confs):
                 x1, y1, x2, y2 = bbox
                 persons.append(
                     TrackedPerson(
                         track_id=int(tid),
-                        bbox=(
-                            int(x1 * sx),
-                            int(y1 * sy),
-                            int(x2 * sx),
-                            int(y2 * sy),
-                        ),
+                        bbox=(int(x1), int(y1), int(x2), int(y2)),
                         confidence=float(conf),
                     )
                 )
 
-        # Frame anotado (redimensionado de volta ao original)
-        annotated = cv2.resize(result.plot(), (frame.shape[1], frame.shape[0]))
+        # Frame anotado (plot() retorna o frame anotado com o mesmo shape da entrada)
+        annotated = result.plot()
         return persons, annotated

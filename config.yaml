@@ -8,12 +8,14 @@ server:
 model:
   # Formato .pt (PyTorch) para tracking integrado; rode scripts/download_model.py para baixar
   path: "models/yolov8n.pt"
-  confidence_threshold: 0.5
+  # Limiar de confiança: valor MENOR detecta mais pessoas (inclusive ocluídas)
+  # 0.35 é um bom equilíbrio; aumente se houver muitos falsos positivos
+  confidence_threshold: 0.70
   # Resolução de entrada para inferência (menor = mais rápido, menos preciso)
   input_resolution: [640, 480]
-  # Processar 1 a cada N frames (2 = pula 2, processa 1)
-  # Aumente se a CPU estiver sobrecarregada (ex.: 4 em hardware muito limitado)
-  skip_frames: 2
+  # Processar 1 a cada N frames (1 = todo frame, 2 = pula 1, etc.)
+  # Manter em 1 para não perder cruzamentos de pessoas rápidas
+  skip_frames: 1
 
 cameras:
   - id: "entrada-principal"
@@ -32,7 +34,7 @@ cameras:
       # Posição da linha: fração do frame (0.0 = borda esquerda, 1.0 = borda direita)
       position: 0.5
       # Direção que conta como ENTRADA: "right" (esquerda→direita) ou "left" (direita→esquerda)
-      direction_in: "left"
+      direction_in: "right"
 
 database:
   path: "data/contador.db"

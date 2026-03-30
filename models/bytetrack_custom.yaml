@@ -1,0 +1,24 @@
+# ByteTrack customizado para o Contador de Pessoas
+# Ajustado para melhor rastreamento quando múltiplas pessoas passam juntas.
+
+tracker_type: bytetrack
+
+# Limiar da 1ª fase de associação — abaixado para não descartar pessoas parcialmente ocluídas
+track_high_thresh: 0.20
+
+# Limiar da 2ª fase (tracks de baixa pontuação) — mantém a pessoa mesmo quando parcialmente oculta
+track_low_thresh: 0.05
+
+# Limiar para INICIAR novo track — abaixado para detectar pessoas próximas mais cedo
+new_track_thresh: 0.20
+
+# Frames que o tracker mantém um ID "perdido" vivo antes de descartar
+# Valor maior = melhor recuperação em momentos de oclusão entre pessoas
+track_buffer: 60
+
+# Limiar de similaridade IoU para associar detecções a tracks existentes
+# Valor MENOR = mais tolerante com pessoas muito próximas (menor sobreposição necessária)
+match_thresh: 0.70
+
+# Combina score de detecção com IoU — ajuda a separa duas pessoas com bboxes sobrepostos
+fuse_score: True

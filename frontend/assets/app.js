@@ -87,7 +87,11 @@ function handleCountUpdate(data) {
   if (deltaOut > 0) addEvent(camera_id, 'out', deltaOut);
 
   // Atualiza estado
-  state.counts[camera_id] = data;
+  state.counts[camera_id] = {
+    ...data,
+    dwell_total_seconds: data.dwell_total_seconds || 0,
+    dwell_count: data.dwell_count || 0
+  };
 
   // Atualiza UI
   refreshStats();
@@ -149,16 +153,36 @@ function updateEventsCount() {
 /* ------------------------------------------------------------------ */
 function refreshStats() {
   let totalIn = 0, totalOut = 0, totalInside = 0;
+  let globalDwellTotal = 0, globalDwellCount = 0;
+
   for (const c of Object.values(state.counts)) {
     totalIn     += c.count_in  || 0;
     totalOut    += c.count_out || 0;
     totalInside += Math.max(0, c.inside || 0);
+    globalDwellTotal += c.dwell_total_seconds || 0;
+    globalDwellCount += c.dwell_count || 0;
   }
+
+  const globalAvg = globalDwellCount > 0 ? (globalDwellTotal / globalDwellCount) : 0;
 
   animateValue('stat-inside',  totalInside);
   animateValue('stat-in',      totalIn);
   animateValue('stat-out',     totalOut);
   animateValue('stat-cameras', state.cameras.length);
+  
+  // Atualiza dwell time (sem animação pois é string formatada)
+  const dwellEl = document.getElementById('stat-dwell');
+  if (dwellEl) {
+    dwellEl.textContent = formatDuration(globalAvg);
+  }
+}
+
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return '0s';
+  if (seconds < 60) return Math.round(seconds) + 's';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.round(seconds % 60);
+  return `${mins}m ${secs}s`;
 }
 
 function animateValue(elId, target) {
@@ -351,6 +375,8 @@ async function loadCameras() {
         count_in: cam.count_in,
         count_out: cam.count_out,
         inside: cam.inside,
+        dwell_total_seconds: cam.dwell_total_seconds || 0,
+        dwell_count: cam.dwell_count || 0
       };
     }
 
